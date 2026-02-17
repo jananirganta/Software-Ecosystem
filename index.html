@@ -1048,9 +1048,6 @@ document.querySelectorAll('.pt').forEach(pt=>{
 
 
 
-// Init
-searchIndex=buildSearchIndex();
-
 // ═══════════════════════════════════════════
 // COMPANY SEARCH
 // ═══════════════════════════════════════════
@@ -1122,10 +1119,25 @@ function doSearch(query){
   }
   clearBtn.style.display='block';
 
-  // Check if searching by risk level
-  const riskTerms={'beneficiary':'beneficiary','low':'low','med':'med','moderate':'med','medium':'med','high':'high','very high':'very high','severe':'very high','vh':'very high'};
-  const isRiskSearch=riskTerms[q]!==undefined;
-  const riskQuery=isRiskSearch?riskTerms[q]:null;
+  // Check if searching by risk level — match partial terms too
+  const riskLevels=[
+    {terms:['beneficiary','benefit','bene','ben'],risk:'beneficiary'},
+    {terms:['low'],risk:'low'},
+    {terms:['med','moderate','medium'],risk:'med'},
+    {terms:['high'],risk:'high'},
+    {terms:['very high','very_high','veryhigh','vh','severe'],risk:'very high'}
+  ];
+  let riskQuery=null;
+  for(const rl of riskLevels){
+    if(rl.terms.some(t=>t===q||q===t)){riskQuery=rl.risk;break}
+  }
+  // Also check if query is a prefix of any term
+  if(!riskQuery&&q.length>=3){
+    for(const rl of riskLevels){
+      if(rl.terms.some(t=>t.startsWith(q))){riskQuery=rl.risk;break}
+    }
+  }
+  const isRiskSearch=riskQuery!==null;
 
   const matches=[];
   for(const entry of searchIndex){
